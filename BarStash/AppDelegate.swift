@@ -332,7 +332,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return noErr
         }
         
-        InstallApplicationEventHandler(eventHandler, 1, &eventSpec, Unmanaged.passUnretained(self).toOpaque(), nil)
+        // 使用 InstallEventHandler 替代 InstallApplicationEventHandler
+        var handlerRef: EventHandlerRef?
+        InstallEventHandler(
+            GetApplicationEventTarget(),
+            eventHandler,
+            1,
+            &eventSpec,
+            Unmanaged.passUnretained(self).toOpaque(),
+            &handlerRef
+        )
         
         RegisterEventHotKey(
             UInt32(kVK_ANSI_T),
@@ -383,7 +392,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if idleCollapseEnabled && isExpanded {
             idleTimer = Timer.scheduledTimer(withTimeInterval: idleCollapseDelay, repeats: false) { [weak self] _ in
                 // 检查系统是否空闲
-                if let lastEvent = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyboard) {
+                if let lastEvent = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown) {
                     if lastEvent > self?.idleCollapseDelay ?? 30.0 {
                         self?.hideAllIcons()
                     }
