@@ -255,24 +255,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func showPreferences() {
-        // 重要：需要确保 PreferencesWindow.swift 已添加到 Xcode 项目中
-        // 添加方法：
-        // 1. 在 Xcode 中右键点击 BarStash 文件夹
-        // 2. 选择 "Add Files to BarStash..."
-        // 3. 选择 PreferencesWindow.swift 和 LoginItemManager.swift
-        // 4. 确保 "Copy items if needed" 和 Target Membership > BarStash 都已勾选
-        // 5. 点击 Add
-        
-        // 如果文件已添加，取消下面的注释：
-        // PreferencesWindowController.shared.show()
-        
-        // 临时方案：显示简单提示
-        let alert = NSAlert()
-        alert.messageText = "偏好设置"
-        alert.informativeText = "请在 Xcode 中添加 PreferencesWindow.swift 文件以使用完整功能。\n\n当前快捷键：⌘ + T 切换隐藏区"
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "确定")
-        alert.runModal()
+        PreferencesWindowController.shared.show()
     }
 
     @objc private func quitApp() {
