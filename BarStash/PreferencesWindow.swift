@@ -81,7 +81,7 @@ struct PreferencesView: View {
 class PreferencesWindowController: NSWindowController {
     static let shared = PreferencesWindowController()
     
-    private var window: NSWindow?
+    private var preferencesWindow: NSWindow?
     
     private init() {
         super.init(window: nil)
@@ -92,10 +92,10 @@ class PreferencesWindowController: NSWindowController {
     }
     
     func show() {
-        if window == nil {
+        if preferencesWindow == nil {
             let hostingView = NSHostingView(rootView: PreferencesView())
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+                contentRect: NSRect(x: 0, y: 0, width: 400, height: 350),
                 styleMask: [.titled, .closable, .miniaturizable],
                 backing: .buffered,
                 defer: false
@@ -104,10 +104,11 @@ class PreferencesWindowController: NSWindowController {
             window.contentView = hostingView
             window.center()
             window.isReleasedWhenClosed = false
+            preferencesWindow = window
             self.window = window
         }
         
-        window?.makeKeyAndOrderFront(nil)
+        preferencesWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 }
