@@ -13,8 +13,7 @@ private struct HiddenStatusItemConfig {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var primaryItem: NSStatusItem?    // 主入口图标（菜单）
     private var chevronItem: NSStatusItem?    // 展开/收起箭头
-    private var pinnedItems: [NSStatusItem] = [] // 用户选择"常驻外面"的项
-    private var hiddenItems: [NSStatusItem] = [] // 隐藏区当前展示的项（仅展开时可见）
+    private var allStatusItems: [String: NSStatusItem] = [:] // 所有状态栏项的字典，key 为 config.id
     private var isExpanded = false            // 隐藏区展开状态
     private var attentionStates: [String: Bool] = [:] // 记录每个隐藏项是否需要突出显示
     private var pinnedIds: Set<String> = []   // 用户偏好：哪些 ID 常驻外显
@@ -91,6 +90,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         unregisterHotkey()
         stopTimers()
+        // 清理所有状态栏项
+        allStatusItems.values.forEach { NSStatusBar.system.removeStatusItem($0) }
+        allStatusItems.removeAll()
     }
 
     private func setUpStatusItems() {
@@ -166,24 +168,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func rebuildStatusItems() {
-        // 清理旧的
-        pinnedItems.forEach { NSStatusBar.system.removeStatusItem($0) }
-        hiddenItems.forEach { NSStatusBar.system.removeStatusItem($0) }
-        pinnedItems.removeAll()
-        hiddenItems.removeAll()
-
-        // 生成新列表：先放 pinned（常驻），再根据展开状态生成隐藏区
+        // 移除所有现有的状态栏项
+        allStatusItems.values.forEach { NSStatusBar.system.removeStatusItem($0) }
+        allStatusItems.removeAll()
+        
+        // 根据展开状态和 pinned 状态重新创建需要的项
         hiddenConfigs.forEach { config in
-            let item = buildStatusItem(for: config)
-
+            let shouldShow: Bool
             if pinnedIds.contains(config.id) {
-                pinnedItems.append(item)
-            } else if isExpanded {
-                hiddenItems.append(item)
+                // pinned 的项始终显示
+                shouldShow = true
             } else {
-                // 未展开且未 pinned，不展示
-                NSStatusBar.system.removeStatusItem(item)
+                // 未 pinned 的项只在展开时显示
+                shouldShow = isExpanded
             }
+            
+            if shouldShow {
+                // 创建并保存状态栏项
+                allStatusItems[config.id] = buildStatusItem(for: config)
+            }
+        }
+    }
+    
+    private func updateStatusItem(_ item: NSStatusItem, for config: HiddenStatusItemConfig) {
+        // 更新项的显示状态（如高亮等）
+        if attentionStates[config.id] == true {
+            item.button?.contentTintColor = .systemRed
+            item.button?.title = "•"
+        } else {
+            item.button?.contentTintColor = nil
+            item.button?.title = ""
         }
     }
 
@@ -241,7 +255,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func showPreferences() {
-        PreferencesWindowController.shared.show()
+        // 重要：需要确保 PreferencesWindow.swift 已添加到 Xcode 项目中
+        // 添加方法：
+        // 1. 在 Xcode 中右键点击 BarStash 文件夹
+        // 2. 选择 "Add Files to BarStash..."
+        // 3. 选择 PreferencesWindow.swift 和 LoginItemManager.swift
+        // 4. 确保 "Copy items if needed" 和 Target Membership > BarStash 都已勾选
+        // 5. 点击 Add
+        
+        // 如果文件已添加，取消下面的注释：
+        // PreferencesWindowController.shared.show()
+        
+        // 临时方案：显示简单提示
+        let alert = NSAlert()
+        alert.messageText = "偏好设置"
+        alert.informativeText = "请在 Xcode 中添加 PreferencesWindow.swift 文件以使用完整功能。\n\n当前快捷键：⌘ + T 切换隐藏区"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "确定")
+        alert.runModal()
     }
 
     @objc private func quitApp() {
